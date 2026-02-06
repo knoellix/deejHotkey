@@ -44,7 +44,7 @@ const (
 	// this threshold constant assumes that re-acquiring all sessions is a kind of expensive operation,
 	// and needs to be limited in some manner. this value was previously user-configurable through a config
 	// key "process_refresh_frequency", but exposing this type of implementation detail seems wrong now
-	minTimeBetweenSessionRefreshes = time.Second * 2
+	minTimeBetweenSessionRefreshes = time.Millisecond * 500
 
 	// determines whether the map should be refreshed when a slider moves.
 	// this is a bit greedy but allows us to ensure sessions are always re-acquired, which is
@@ -83,6 +83,7 @@ func (m *sessionMap) initialize() error {
 
 	m.setupOnConfigReload()
 	m.setupOnSliderMove()
+	m.setupSessionWatchdog()
 
 	return nil
 }
@@ -139,6 +140,25 @@ func (m *sessionMap) setupOnConfigReload() {
 			}
 		}
 	}()
+}
+
+// setupSessionWatchdog starts a background goroutine that continuously refreshes sessions
+// and applies saved slider values. This ensures new audio streams get the correct volume
+// immediately, similar to the volume_watchdog in the Python deej implementation.
+func (m *sessionMap) setupSessionWatchdog() {
+	go func() {
+		ticker := time.NewTicker(minTimeBetweenSessionRefreshes)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			// Only refresh if we have slider values to apply
+			if len(m.lastSliderValues) > 0 {
+				m.refreshSessions(false)
+			}
+		}
+	}()
+
+	m.logger.Debug("Started session watchdog (500ms refresh)")
 }
 
 func (m *sessionMap) setupOnSliderMove() {
