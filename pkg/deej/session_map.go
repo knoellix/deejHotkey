@@ -162,6 +162,14 @@ func (m *sessionMap) refreshSessions(force bool) {
 		return
 	}
 
+	// Snapshot of existing keys to detect new sessions without locking in loop
+	m.lock.Lock()
+	existingKeys := make(map[string]bool, len(m.m))
+	for k := range m.m {
+		existingKeys[k] = true
+	}
+	m.lock.Unlock()
+
 	// 2. Build NEW map locally
 	newMap := make(map[string][]Session)
 	var newUnmappedSessions []Session
@@ -172,6 +180,13 @@ func (m *sessionMap) refreshSessions(force bool) {
 
 		if !m.sessionMapped(session) {
 			newUnmappedSessions = append(newUnmappedSessions, session)
+
+			// If this is a NEW unmapped session (not in old map), default to 20%
+			// This prevents unknown apps from blasting at 100% volume
+			if !existingKeys[key] {
+				m.logger.Debugw("Setting default volume for new unmapped session", "session", key)
+				session.SetVolume(0.20)
+			}
 		}
 	}
 
