@@ -107,8 +107,25 @@ deej is written in Go and [distributed](https://github.com/michaelwschultz/deej/
 
 ### Software
 
-- The code running on the Arduino board is a [C program](./arduino/deej-5-sliders-vanilla/deej-5-sliders-vanilla.ino) constantly writing current slider values over its serial interface
-- The PC runs a lightweight [Go client](./pkg/deej/cmd/main.go) in the background. This client reads the serial stream and adjusts app volumes according to the given configuration file
+- The code running on the Arduino board is a C program constantly writing current slider values over its serial interface.
+
+### Arduino Variants
+
+We provide different sketches depending on your hardware setup:
+
+1. **Standard (5 Sliders):** [`arduino/deej-5-sliders-vanilla`](./arduino/deej-5-sliders-vanilla/deej-5-sliders-vanilla.ino)
+   - The classic deej setup with 5 analog sliders.
+
+2. **Hybrid (4 Sliders + Hotkeys):** [`arduino/deej-4-sliders+keys`](./arduino/deej-4-sliders+keys/)
+   - **Maps Buttons to F13-F24:** Uses extra buttons as specialized function keys (F13-F24) which can be bound in software (OBS, Discord, etc.) without conflicting with standard keys.
+   - **Files:**
+     - `deej-4-sliders+keys_10.ino`: For hardware with 10 buttons.
+     - `deej-4-sliders+keys_12.ino`: For hardware with 12 buttons.
+
+![My Custom Build](assets/deejhotkey.jpg)
+*Custom build using the "4 Sliders + Keys" configuration*
+
+- The PC runs a lightweight [Go client](./pkg/deej/cmd/main.go) (or the [Python Controller](./deej-python-linux/)) in the background.
 
 ## Slider mapping (configuration)
 
