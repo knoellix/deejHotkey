@@ -14,6 +14,8 @@ I needed a reliable controller for Linux and customized a Python script (based o
 - **Resource Efficient:** Runs on CachyOS with <20MB RAM usage.
 - **Reliable:** no audio crackling/glitching compared to the polling-based approach.
 
+> **Important Tip:** To fully eliminate volume bursts in browsers (Firefox/Chrome), it is recommended to force them to use the **ALSA** audio backend instead of direct PulseAudio/PipeWire access if you encounter issues.
+
 👉 **[Go to Python Controller Documentation](./deej-python-linux/README.md)**
 
 

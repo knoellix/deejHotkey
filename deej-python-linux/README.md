@@ -65,3 +65,10 @@ chmod +x deej.py
    ```bash
    systemctl --user enable --now deej.service
    ```
+
+## Troubleshooting / Tips
+
+### Browser Volume Bursts (100% Volume on Start)
+Even with this script, some browsers (Firefox, Chrome) might still briefly flash 100% volume because they initialize their audio stream aggressively.
+**Workaround:** Configure the browser to use **ALSA** as its audio backend. This buffers the creation enough for Deej to catch it in time.
+- **Firefox:** `about:config` -> search for `media.cubeb.backend` -> set to `alsa` (if available) or launch with `MOZ_AUDIO_BACKEND=alsa`.
