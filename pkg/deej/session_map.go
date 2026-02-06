@@ -2,6 +2,7 @@ package deej
 
 import (
 	"fmt"
+	"math"
 	"regexp"
 	"strings"
 	"sync"
@@ -76,9 +77,9 @@ func newSessionMap(deej *Deej, logger *zap.SugaredLogger, sessionFinder SessionF
 }
 
 func (m *sessionMap) initialize() error {
-	if err := m.getAndAddSessions(); err != nil {
-		m.logger.Warnw("Failed to get all sessions during session map initialization", "error", err)
-		return fmt.Errorf("get all sessions during init: %w", err)
+	m.refreshSessions(true)
+	if len(m.m) == 0 {
+		m.logger.Warn("No sessions found during initialization")
 	}
 
 	m.setupOnConfigReload()
@@ -97,36 +98,7 @@ func (m *sessionMap) release() error {
 	return nil
 }
 
-// assumes the session map is clean!
-// only call on a new session map or as part of refreshSessions which calls reset
-func (m *sessionMap) getAndAddSessions() error {
 
-	// mark that we're refreshing before anything else
-	m.lastSessionRefresh = time.Now()
-	m.unmappedSessions = nil
-
-	sessions, err := m.sessionFinder.GetAllSessions()
-	if err != nil {
-		m.logger.Warnw("Failed to get sessions from session finder", "error", err)
-		return fmt.Errorf("get sessions from SessionFinder: %w", err)
-	}
-
-	for _, session := range sessions {
-		m.add(session)
-
-		if !m.sessionMapped(session) {
-			m.logger.Debugw("Tracking unmapped session", "session", session)
-			m.unmappedSessions = append(m.unmappedSessions, session)
-		}
-	}
-
-	// Apply saved slider values to newly discovered sessions
-	m.applyCurrentSliderValues()
-
-	m.logger.Infow("Got all audio sessions successfully", "sessionMap", m)
-
-	return nil
-}
 
 func (m *sessionMap) setupOnConfigReload() {
 	configReloadedChannel := m.deej.config.SubscribeToChanges()
@@ -175,21 +147,45 @@ func (m *sessionMap) setupOnSliderMove() {
 }
 
 // performance: explain why force == true at every such use to avoid unintended forced refresh spams
+// performance: explain why force == true at every such use to avoid unintended forced refresh spams
 func (m *sessionMap) refreshSessions(force bool) {
 
-	// make sure enough time passed since the last refresh, unless force is true in which case always clear
+	// make sure enough time passed since the last refresh, unless force is true
 	if !force && m.lastSessionRefresh.Add(minTimeBetweenSessionRefreshes).After(time.Now()) {
 		return
 	}
 
-	// clear and release sessions first
-	m.clear()
-
-	if err := m.getAndAddSessions(); err != nil {
-		m.logger.Warnw("Failed to re-acquire all audio sessions", "error", err)
-	} else {
-		m.logger.Debug("Re-acquired sessions successfully")
+	// 1. Get ALL sessions first
+	sessions, err := m.sessionFinder.GetAllSessions()
+	if err != nil {
+		m.logger.Warnw("Failed to get sessions from session finder", "error", err)
+		return
 	}
+
+	// 2. Build NEW map locally
+	newMap := make(map[string][]Session)
+	var newUnmappedSessions []Session
+
+	for _, session := range sessions {
+		key := session.Key()
+		newMap[key] = append(newMap[key], session)
+
+		if !m.sessionMapped(session) {
+			newUnmappedSessions = append(newUnmappedSessions, session)
+		}
+	}
+
+	// 3. Swap maps atomically
+	m.lock.Lock()
+	m.m = newMap
+	m.unmappedSessions = newUnmappedSessions
+	m.lastSessionRefresh = time.Now()
+	m.lock.Unlock()
+
+	// 4. Apply values
+	m.applyCurrentSliderValues()
+
+	m.logger.Debug("Refreshed sessions successfully (atomic update)")
 }
 
 // returns true if a session is not currently mapped to any slider, false otherwise
@@ -364,10 +360,14 @@ func (m *sessionMap) applyCurrentSliderValues() {
 			for _, resolvedTarget := range resolvedTargets {
 				if sessions, ok := m.get(resolvedTarget); ok {
 					for _, session := range sessions {
-						if session.GetVolume() != value {
+						// Check if volume difference is significant (more than 1%)
+						// This prevents spamming PulseAudio with tiny adjustments due to float precision
+						diff := float64(session.GetVolume() - value)
+						if math.Abs(diff) > 0.01 {
 							m.logger.Debugw("Applying saved slider value to session",
 								"session", session.Key(),
-								"value", value)
+								"value", value,
+								"current", session.GetVolume())
 							session.SetVolume(value)
 						}
 					}
@@ -403,16 +403,8 @@ func (m *sessionMap) clear() {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	m.logger.Debug("Releasing and clearing all audio sessions")
-
-	for key, sessions := range m.m {
-		for _, session := range sessions {
-			session.Release()
-		}
-
-		delete(m.m, key)
-	}
-
+	// We only clear the map structure, individual sessions don't need explicit release for PulseAudio
+	m.m = make(map[string][]Session)
 	m.logger.Debug("Session map cleared")
 }
 
