@@ -25,11 +25,14 @@ I needed a reliable controller for Linux and customized a Python script (based o
 ### Go Client Improvements (Native)
 
 If you prefer using the native Go binary, we have applied some experimental fixes:
-- **Atomic Session Refresh:** Completely rewrote the session refresh mechanism to prevent major audio glitches. *Note: Some users still report very minor crackling; the Python version is recommended if this persists.*
+- **Atomic Refresh:** Completely rewrote the session refresh mechanism to prevent major audio glitches. *Note: Testing showed very minor crackling still persists on some machines; the Python version is recommended if this happens.*
 - **Fast Watchdog:** New sessions are detected within 500ms.
 - **Traffic Reduction:** Added 1% volume tolerance to prevent spamming the audio server.
 
-> **Note:** While "Atomic Refresh" significantly improves performance, you might still experience minor audio crackling depending on your specific system setup. If you run into issues, we recommend trying the **Python Controller** included in this repository.
+> **Note:** While "Atomic Refresh" significantly improves performance, testing showed you might still experience minor audio crackling depending on your system. If you run into issues, we recommend trying the **Python Controller**.
+
+### Credits
+- **Problem Analysis & Code Refactoring:** Supported by AI Assistant (Google DeepMind).
 
 
 # deej - updated 2025
