@@ -1,6 +1,25 @@
-# deej - updated 2025
+# deej - updated 2026
 
 deej is an **open-source hardware volume mixer** for Windows and Linux PCs. It lets you use real-life sliders (like a DJ!) to **seamlessly control the volumes of different apps** (such as your music player, the game you're playing and your voice chat session) without having to stop what you're doing.
+
+
+## Linux Support (Python Controller)
+
+This repository includes an optimized **Python-based controller for Linux** (PulseAudio/PipeWire), located in [`deej-python-linux`](./deej-python-linux/).
+
+I needed a reliable controller for Linux and customized a Python script (based on [this post by bendiksens.net](https://bendiksens.net/posts/deej-sound-control-for-linux-written-in-python/)) to resolve issues with the original Go client on my system.
+
+**Why use the Python version?**
+- **No "100% Volume Burst":** Uses native event listeners to catch new audio streams immediately and set correct volume before they blast at full volume.
+- **Resource Efficient:** Runs on CachyOS with <20MB RAM usage.
+- **Reliable:** no audio crackling/glitching compared to the polling-based approach.
+
+👉 **[Go to Python Controller Documentation](./deej-python-linux/README.md)**
+
+
+
+
+# deej - updated 2025
 
 **Join the [deej Discord server](https://discord.gg/nf88NJu) if you need help or have any questions!**
 
@@ -177,7 +196,8 @@ With many different 3D-printed designs being added to our [community showcase](.
 
 #### Linux
 
-- Install `libgtk-3-dev`, `libappindicator3-dev` and `libwebkit2gtk-4.0-dev` for system tray support. Pre-built Linux binaries aren't currently released, so you'll need to [build from source](#building-from-source). If there's demand for pre-built binaries, please [let me know](https://discord.gg/nf88NJu)!
+- **Recommended:** Use the [Python Controller](./deej-python-linux/) included in this repo.
+- **Legacy Go Client:** Install `libgtk-3-dev`, `libappindicator3-dev` and `libwebkit2gtk-4.0-dev` for system tray support. Pre-built Linux binaries aren't currently released, so you'll need to [build from source](#building-from-source).
 
 ### Download and installation
 
