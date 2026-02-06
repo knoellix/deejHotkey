@@ -18,7 +18,7 @@ slider_mapping:
     - deej.unmapped
 
 # set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
-invert_sliders: true
+invert_sliders: false
 
 # settings for connecting to the arduino board
 com_port: /dev/ttyACM0

@@ -1,0 +1,21 @@
+[Unit]
+Description=Deej Audio Controller Python Script
+After=pipewire.service
+
+[Service]
+CPUSchedulingPolicy=fifo
+CPUSchedulingPriority=20
+Nice=-10
+Type=simple
+# Pfad zu Python und deinem Skript (bitte prüfen!)
+ExecStart=/usr/bin/python /home/knoellix/github/deej/deejHotkey/deej-python-linux/deej.py
+# Automatischer Neustart bei Fehlern
+Restart=always
+RestartSec=5
+# Arbeitsverzeichnis
+WorkingDirectory=/home/knoellix/github/deej/deejHotkey/deej-python-linux/
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+
+
+[Install]
+WantedBy=default.target
