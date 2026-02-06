@@ -3,6 +3,7 @@ package deej
 import (
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/jfreymuth/pulse/proto"
 	"go.uber.org/zap"
@@ -129,17 +130,42 @@ func (sf *paSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
 	}
 
 	for _, info := range reply {
-		name, ok := info.Properties["application.process.binary"]
+		var name string
 
-		if !ok {
+		// Try application.process.binary first (traditional PulseAudio)
+		if propName, ok := info.Properties["application.process.binary"]; ok {
+			name = propName.String()
+		} else if appName, ok := info.Properties["application.name"]; ok {
+			// Fallback: Extract process name from application.name
+			// Format: "PipeWire ALSA [firefox]" -> "firefox"
+			nameStr := appName.String()
+			if idx := strings.Index(nameStr, "["); idx != -1 {
+				if endIdx := strings.Index(nameStr, "]"); endIdx > idx {
+					name = nameStr[idx+1 : endIdx]
+				}
+			}
+			if name == "" {
+				name = nameStr
+			}
+		} else if nodeName, ok := info.Properties["node.name"]; ok {
+			// Fallback: Extract from node.name
+			// Format: "alsa_playback.firefox" -> "firefox"
+			nameStr := nodeName.String()
+			if idx := strings.LastIndex(nameStr, "."); idx != -1 {
+				name = nameStr[idx+1:]
+			} else {
+				name = nameStr
+			}
+		}
+
+		if name == "" {
 			sf.logger.Warnw("Failed to get sink input's process name",
 				"sinkInputIndex", info.SinkInputIndex)
-
 			continue
 		}
 
 		// create the deej session object
-		newSession := newPASession(sf.sessionLogger, sf.client, info.SinkInputIndex, info.Channels, name.String())
+		newSession := newPASession(sf.sessionLogger, sf.client, info.SinkInputIndex, info.Channels, name)
 
 		// add it to our slice
 		*sessions = append(*sessions, newSession)
@@ -148,3 +174,4 @@ func (sf *paSessionFinder) enumerateAndAddSessions(sessions *[]Session) error {
 
 	return nil
 }
+
