@@ -98,8 +98,6 @@ func (m *sessionMap) release() error {
 	return nil
 }
 
-
-
 func (m *sessionMap) setupOnConfigReload() {
 	configReloadedChannel := m.deej.config.SubscribeToChanges()
 
@@ -140,7 +138,31 @@ func (m *sessionMap) setupOnSliderMove() {
 		for {
 			select {
 			case event := <-sliderEventsChannel:
-				m.handleSliderMoveEvent(event)
+				// 1. Initial event
+				// We use a map to deduplicate events by slider ID, ensuring we only process
+				// the latest value for each slider in this batch
+				processingQueue := make(map[int]SliderMoveEvent)
+				processingQueue[event.SliderID] = event
+
+				// 2. Drain channel (non-blocking)
+				// If the producer (Arduino) is faster than the consumer (Windows API),
+				// this loop will catch up by discarding intermediate values
+			drainLoop:
+				for {
+					select {
+					case nextEvent := <-sliderEventsChannel:
+						// Overwrite with newer value for this slider
+						processingQueue[nextEvent.SliderID] = nextEvent
+					default:
+						// Channel empty, stop draining and process what we have
+						break drainLoop
+					}
+				}
+
+				// 3. Process only the winners
+				for _, finalEvent := range processingQueue {
+					m.handleSliderMoveEvent(finalEvent)
+				}
 			}
 		}
 	}()
