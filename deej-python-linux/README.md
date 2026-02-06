@@ -24,7 +24,8 @@ This version uses native event listeners to detect new audio streams **immediate
 ## Arduino Compatibility
 
 This script works with the standard deej Arduino sketches, but we recommend the optimized version included in this repository:
-`arduino/deej-5-sliders-vanilla/deej-5-sliders-vanilla.ino`
+`arduino/deej-4-sliders+keys/deej-4-sliders+keys_10.ino`
+`arduino/deej-4-sliders+keys/deej-4-sliders+keys_12.ino`
 
 **Adding more sliders:**
 If you need a 5th slider (or more), simply edit the Arduino sketch to read an additional analog pin and add it to the `SLIDER_MAPPING` in `deej.py`.
