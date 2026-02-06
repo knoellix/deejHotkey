@@ -25,10 +25,11 @@ I needed a reliable controller for Linux and customized a Python script (based o
 ### Go Client Improvements (Native)
 
 If you prefer using the native Go binary, we have applied some experimental fixes:
+- **Atomic Session Refresh:** Completely rewrote the session refresh mechanism to prevent major audio glitches. *Note: Some users still report very minor crackling; the Python version is recommended if this persists.*
 - **Fast Watchdog:** New sessions are detected within 500ms.
 - **Traffic Reduction:** Added 1% volume tolerance to prevent spamming the audio server.
 
-> **Note:** The "Atomic Refresh" and "Auto-Limit" features in the Go client proved unreliable on some Linux systems (e.g. persistent 100% volume bursts). We strongly recommend the **Python Controller** for a stable experience.
+> **Note:** The "Auto-Limit" feature (default 20% volume) in the Go client proved unreliable on some Linux systems. We strongly recommend the **Python Controller** for the most stable experience.
 
 
 # deej - updated 2025
