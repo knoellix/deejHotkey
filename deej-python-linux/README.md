@@ -3,6 +3,21 @@
 Alternative implementation of the Deej controller logic in Python, optimized for **PulseAudio/PipeWire**.
 This version uses native event listeners to detect new audio streams **immediately** and applies the volume processing, avoiding the "100% burst" issue.
 
+
+## System Requirements
+
+- **Desktop Environment:** Irrelevant (Works on KDE, GNOME, XFCE, i3, etc.)
+- **Audio System:** **PulseAudio** OR **PipeWire** (with `pipewire-pulse` compatibility, which is standard on most modern distros like CachyOS, Manjaro, Ubuntu).
+- **Permissions:** Your user needs access to the serial port.
+  - Arch/CachyOS: Add user to `uucp` check via `groups`
+  - Ubuntu/Debian: Add user to `dialout`
+  ```bash
+  sudo usermod -aG uucp $USER  # Arch/Manjaro
+  # OR
+  sudo usermod -aG dialout $USER # Ubuntu/Debian
+  ```
+  *(Logout/Login required after changing groups)*
+
 ## Setup
 
 1. **Install Python** (usually already installed):
