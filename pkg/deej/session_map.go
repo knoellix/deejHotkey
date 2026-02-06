@@ -23,6 +23,7 @@ type sessionMap struct {
 
 	lastSessionRefresh time.Time
 	unmappedSessions   []Session
+	lastSliderValues   map[int]float32 // Stores last slider values for auto-sync
 }
 
 const (
@@ -43,7 +44,7 @@ const (
 	// this threshold constant assumes that re-acquiring all sessions is a kind of expensive operation,
 	// and needs to be limited in some manner. this value was previously user-configurable through a config
 	// key "process_refresh_frequency", but exposing this type of implementation detail seems wrong now
-	minTimeBetweenSessionRefreshes = time.Second * 5
+	minTimeBetweenSessionRefreshes = time.Second * 2
 
 	// determines whether the map should be refreshed when a slider moves.
 	// this is a bit greedy but allows us to ensure sessions are always re-acquired, which is
@@ -61,11 +62,12 @@ func newSessionMap(deej *Deej, logger *zap.SugaredLogger, sessionFinder SessionF
 	logger = logger.Named("sessions")
 
 	m := &sessionMap{
-		deej:          deej,
-		logger:        logger,
-		m:             make(map[string][]Session),
-		lock:          &sync.Mutex{},
-		sessionFinder: sessionFinder,
+		deej:             deej,
+		logger:           logger,
+		m:                make(map[string][]Session),
+		lock:             &sync.Mutex{},
+		sessionFinder:    sessionFinder,
+		lastSliderValues: make(map[int]float32),
 	}
 
 	logger.Debug("Created session map instance")
@@ -116,6 +118,9 @@ func (m *sessionMap) getAndAddSessions() error {
 			m.unmappedSessions = append(m.unmappedSessions, session)
 		}
 	}
+
+	// Apply saved slider values to newly discovered sessions
+	m.applyCurrentSliderValues()
 
 	m.logger.Infow("Got all audio sessions successfully", "sessionMap", m)
 
@@ -207,6 +212,8 @@ func (m *sessionMap) sessionMapped(session Session) bool {
 }
 
 func (m *sessionMap) handleSliderMoveEvent(event SliderMoveEvent) {
+	// Store the slider value for auto-sync with new sessions
+	m.lastSliderValues[event.SliderID] = event.PercentValue
 
 	// first of all, ensure our session map isn't moldy
 	if m.lastSessionRefresh.Add(maxTimeBetweenSessionRefreshes).Before(time.Now()) {
@@ -321,6 +328,33 @@ func (m *sessionMap) applyTargetTransform(specialTargetName string) []string {
 	}
 
 	return nil
+}
+
+// applyCurrentSliderValues applies saved slider values to all mapped sessions.
+// This ensures new sessions get the correct volume immediately after being discovered.
+func (m *sessionMap) applyCurrentSliderValues() {
+	m.deej.config.SliderMapping.iterate(func(sliderIdx int, targets []string) {
+		value, ok := m.lastSliderValues[sliderIdx]
+		if !ok {
+			return // No saved value for this slider yet
+		}
+
+		for _, target := range targets {
+			resolvedTargets := m.resolveTarget(target)
+			for _, resolvedTarget := range resolvedTargets {
+				if sessions, ok := m.get(resolvedTarget); ok {
+					for _, session := range sessions {
+						if session.GetVolume() != value {
+							m.logger.Debugw("Applying saved slider value to session",
+								"session", session.Key(),
+								"value", value)
+							session.SetVolume(value)
+						}
+					}
+				}
+			}
+		}
+	})
 }
 
 func (m *sessionMap) add(value Session) {
