@@ -3,7 +3,9 @@
 deej is an **open-source hardware volume mixer** for Windows and Linux PCs. It lets you use real-life sliders (like a DJ!) to **seamlessly control the volumes of different apps** (such as your music player, the game you're playing and your voice chat session) without having to stop what you're doing.
 
 
-## Linux Support (Python Controller)
+## Linux Support
+
+### Python Controller (Recommended)
 
 This repository includes an optimized **Python-based controller for Linux** (PulseAudio/PipeWire), located in [`deej-python-linux`](./deej-python-linux/).
 
@@ -14,9 +16,17 @@ I needed a reliable controller for Linux and customized a Python script (based o
 - **Resource Efficient:** Runs on CachyOS with <20MB RAM usage.
 - **Reliable:** no audio crackling/glitching compared to the polling-based approach.
 
-> **Important Tip:** To fully eliminate volume bursts in browsers (Firefox/Chrome), it is recommended to force them to use the **ALSA** audio backend instead of direct PulseAudio/PipeWire access if you encounter issues.
-
 👉 **[Go to Python Controller Documentation](./deej-python-linux/README.md)**
+
+### Go Client Improvements (Native)
+
+If you prefer using the native Go binary, we have also applied significant fixes to the core logic in this repository:
+- **Atomic Session Refresh:** Completely rewrote the session refresh mechanism to prevent audio crackling ("clicks") that occurred during scanning.
+- **Fast Watchdog:** New sessions are detected within 500ms.
+- **Auto-Limit:** New, unmapped applications now default to **20% volume** instead of 100% to prevent loud surprises.
+- **Traffic Reduction:** Added 1% volume tolerance to prevent spamming the audio server with micro-adjustments.
+
+> **Important Tip:** To fully eliminate volume bursts in browsers (Firefox/Chrome), it is recommended to force them to use the **ALSA** audio backend instead of direct PulseAudio/PipeWire access if you encounter issues.
 
 
 
