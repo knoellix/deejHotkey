@@ -29,7 +29,7 @@ If you prefer using the native Go binary, we have applied some experimental fixe
 - **Fast Watchdog:** New sessions are detected within 500ms.
 - **Traffic Reduction:** Added 1% volume tolerance to prevent spamming the audio server.
 
-> **Note:** While "Atomic Refresh" improves performance, some users still report very minor crackling on the Go client. We strongly recommend the **Python Controller** for the most stable experience.
+> **Note:** While "Atomic Refresh" significantly improves performance, you might still experience minor audio crackling depending on your specific system setup. If you run into issues, we recommend trying the **Python Controller** included in this repository.
 
 
 # deej - updated 2025
